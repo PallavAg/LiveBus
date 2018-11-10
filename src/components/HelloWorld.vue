@@ -85,7 +85,9 @@
 </template>
 
 <script>
+import HelloWorld from '@'
   export default {
+    components: { HelloWorld },
     data: () => ({
       ecosystem: [
         {
