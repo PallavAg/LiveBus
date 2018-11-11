@@ -11,5 +11,10 @@ export default new Router({
       name: 'home',
       component: () => import(/* webpackChunkName: "about" */ './views/BusRoute.vue')
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import(/* webpackChunkName: "about" */ './views/Login.vue')
+    },
   ]
 })
