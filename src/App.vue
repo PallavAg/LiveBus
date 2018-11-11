@@ -18,22 +18,22 @@
       </v-btn>
     </v-toolbar>
     <v-content>
-      <router-view/>
+      <HelloWorld/>
     </v-content>
   </v-app>
 </template>
+
 <script>
-  export default{
-    methods: {
-      login: function()
-      {
-        this.$router.push('login')
-      },
-      home: function()
-      {
-        this.$router.push('home')
-      }
+import HelloWorld from './components/HelloWorld'
+
+export default {
+  name: 'App',
+  components: {
+    HelloWorld
+  },
+  data () {
+    return {
+      //
     }
   }
 </script>
-
