@@ -1,18 +1,25 @@
 <template>
-  <div ref="map" id="map" style="height: 100%;">
-    <v-layout column class="map-overlay-btns">
-      <v-btn
-        color="success"
-        @click="board"
-        v-if="boarded === null"
-      >Board
-      </v-btn>
-      <template v-else>
+  <div style="height: 100%">
+    <v-container v-if="writing" style="height: 100%; width: 100%">
+      <p class="mt-4 mb-4 text-xs-left title">How's Your Trip On Bus Going?</p>
+      <v-textarea
+        solo
+        name="input-context"
+        label="Type Here :)"
+        v-model="text"
+      >
+      </v-textarea>
+      <v-btn rounded primary v-on:click="submit">Submit</v-btn>
+      <v-btn rounded dark v-on:click="canclesubmit">Cancel</v-btn>
+    </v-container>
+    <div v-else class=" mx-0; px-0" style="width: 100%;">
+    <v-card v-if="boarded != null && !writing" column class="map-overlay-btns mx-0; px-0" style="width: 100%;">
+      <template>
         <v-layout row class="map-overlay-btn-group">
           <v-btn
             v-for="id in [2, 1, 0]"
             :key="id"
-            :color="id === capacity ? ['success','accent','error'][id] : ''"
+            :color="['success','accent','error'][id]"
             small
             tag="div"
             @click="capacity = id"
@@ -20,11 +27,38 @@
         </v-layout>
         <v-btn
           small
-          color="error"
-          @click="unboard">Exit
+          color="warning"
+          @click="unboard"
+        style="width: 100%; height: 3rem;margin:0">Exit
         </v-btn>
       </template>
-    </v-layout>
+    </v-card>
+    </div>
+    <div ref="map" id="map" style="height:100%"></div>
+    <v-btn
+      color="success"
+      @click="board"
+      v-if="boarded === null && !writing"
+      style="width: 100%; height: 7rem;margin:0;border-radius: 0;position: absolute;
+        z-index: 100;
+        bottom: 0;
+        left: 0;
+        right: 0;"
+    >Board
+    </v-btn>
+    <v-btn v-if="!writing" icon @click="center" style="position: absolute;
+        z-index: 500;
+        top: 1rem;
+        left: 1rem" >
+      <v-icon>my_location</v-icon>
+    </v-btn>
+    <v-btn v-if="userID && !writing && boarded" large fab class="primary" style="position: absolute;
+        z-index: 500;
+        bottom: 8rem;
+        right: 1rem"
+           v-on:click="newMessage">
+      <v-icon>message</v-icon>
+    </v-btn>
   </div>
 </template>
 
@@ -86,17 +120,27 @@ export default {
     return {
       boarded: null,
       capacity: 0,
+      markers: new Map(),
+      writing: false,
+      text:'',
+      bubbles: [
+      ],
+      messages: [
+      ],
       myMarker: null,
+      userID:'',
     }
   },
   mounted() {
+    if(auth.currentUser && auth.currentUser.uid)
+      this.userID = auth.currentUser.uid
     const defaultLayers = platform.createDefaultLayers()
     this.map = new Here.Map(
       this.$refs.map,
       defaultLayers.normal.map,
       {
         zoom: 10,
-        center: {lat: 52.5, lng: 13.4}
+        center: {lat: 49, lng: -89}
       }
     )
     this.clusteredDataProvider = new Here.clustering.Provider([], {
@@ -110,13 +154,19 @@ export default {
     })
     const layer = new Here.map.layer.ObjectLayer(this.clusteredDataProvider)
     this.map.addLayer(layer)
-
     window.addEventListener('resize', () => {
       this.map.getViewPort().resize()
     })
     const behavior = new Here.mapevents.Behavior(new Here.mapevents.MapEvents(this.map))
     // const ui = Here.ui.UI.createDefault(this.map, defaultLayers)
-
+    this.loadBubbles()
+    const docRef = db.collection('routes').doc(this.route)
+    docRef.get()
+      .then(doc => {
+        if (!doc.exists) {
+          return docRef.set({})
+        }
+      })
     window.navigator.geolocation.getCurrentPosition(this.updateLocation)
     this.load()
   },
@@ -170,14 +220,114 @@ export default {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
     },
+    canclesubmit()
+    {
+      this.writing = false;
+    },
+    center() {
+      window.navigator.geolocation.getCurrentPosition(pos => {
+        this.map.setCenter({lat: pos.coords.latitude, lng: pos.coords.longitude})
+      })
+    },
+    loadBubbles(){
+      const defaultLayers = platform.createDefaultLayers()
+      let ui = Here.ui.UI.createDefault(this.map, defaultLayers, 'en-US');
+      let routeRef = db.collection("routes").doc(this.route);
+      routeRef.get()
+        .then(doc => {
+          if (doc.exists) {
+            let data = doc.data();
+            console.log("loadBubbles:  "+data)
+            for (let uid in data.users) {
+              const user = data.users[uid]
+              console.log("loadBubbles, user:  "+user.message)
+              if (user.message) {
+                let updated = user.updated;
+                console.log("loadBubbles: Boolean: "+ (updated.seconds + 100000 > Date.now() / 1000))
+                if (updated.seconds + 15 > Date.now() / 1000) {
+                  this.messages.push({content: user.message, time: updated.seconds})
+                  let bubble = new Here.ui.InfoBubble({lat: user.location.latitude, lng: user.location.longitude}, {
+                    content: user.message
+                  });
+                  console.log("loadBubbles: SHOW")
+                  this.bubbles.push({bubble:bubble,user:uid})
+                  ui.addBubble(bubble);
+                  setTimeout(() => {
+                    ui.removeBubble(bubble)
+                  }, 15000 + updated.seconds * 1000 - Date.now())
+                }
+              }
+            }
+          }
+        })
+        .catch(err => {
+        })
+      routeRef.onSnapshot(
+        doc => {
+          if (doc.exists) {
+            console.log("SNAPSHOT!!!!")
+            let data = doc.data();
+            for (let uid in data.users) {
+              const user = data.users[uid]
+              if (user.message) {
+                let updated = user.updated;
+                console.log("SNAP:" +user.message )
+                if (this.messages && !this.messages.includes({content: user.message, time: updated.seconds})) {
+                  console.log("SNAP:SSS" )
+                  if (updated.seconds + 15 > Date.now() / 1000) {
+                    this.messages.push({content: user.message, time: updated.seconds})
+                    this.bubbles.filter( function(currentValue, index, arr){
+                      console.log("SNAP: OLD DISCORVERED")
+                      ui.removeBubble(currentValue.bubble)
+                    }, {user:uid})
+                    let bubble = new Here.ui.InfoBubble({lat: user.location.latitude, lng: user.location.longitude}, {
+                      content: user.message
+                    });
+                    ui.addBubble(bubble);
+                    this.bubbles.push({bubble:bubble,user:uid})
+                    setTimeout(() => {
+                      ui.removeBubble(bubble)
+                    //}, 15 * 1000 + updated.seconds * 1000 - Date.now())
+                    }, 15000 + updated.seconds * 1000 - Date.now())
+                  }
+                }
+              }
+            }
+          }
+        }, err => {
+        })
+    },
+    submit() {
+      let obj ={}
+      obj[`users.${auth.currentUser.uid}.message`] = this.text
+      obj[`users.${auth.currentUser.uid}.updated`] = new Date()
+      db.collection('routes').doc(this.route).update(obj)
+        .then(() =>
+        {
+          this.writing = false
+        })
+        .catch(err =>
+        {
+          console.log("UPLOAD ERROR")
+          this.writing = false
+        })
+    },
     docUpdated (doc) {
       const data = doc.data()
       const dataPoints = []
       for (const uid in data.users) {
         const theUser = data.users[uid]
         const geoPoint = theUser.location
+        console.log("SHIT" + geoPoint)
         const coords = {lat: geoPoint.latitude, lng: geoPoint.longitude}
         if (uid == auth.currentUser.uid) {
+          if(this.bubbles) {
+            this.bubbles.forEach(bubble => {
+              if (bubble.user === uid) {
+                bubble.bubble.setPosition(coords)
+              }
+            });
+          }
           if (this.myMarker) {
             this.myMarker.setPosition(coords)
           } else {
@@ -194,10 +344,15 @@ export default {
       }
       this.clusteredDataProvider.setDataPoints(dataPoints)
     },
+    newMessage()
+    {
+      this.writing = true;
+    },
     updateLocation(position) {
       console.log("ping")
       const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
       if (this.boarded !== null) {
+        console.log("pingSHIT")
         const obj = {}
         obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
           position.coords.latitude,
@@ -238,32 +393,38 @@ export default {
 </script>
 
 <style>
-#map {
+  #map {
   height: 100%;
+  padding-bottom: 7rem;
 }
 
 .map-overlay-btns {
   position: absolute;
   z-index: 100;
-  bottom: 1.5rem;
-  left: 2rem;
-  right: 2rem;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 7rem;
 }
 .map-overlay-btn-group {
-  padding: 0 0.5rem;
+  padding: 0 0;
 }
 .map-overlay-btn-group > .v-btn {
+  width: 33%;
+  height: 4rem;
   margin: 0;
   flex-grow: 1;
   border-radius: 0;
 }
 .map-overlay-btn-group > .v-btn:first-child {
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
+  width: 33%;
+  height: 4rem;
+  border-radius: 0;
 }
 .map-overlay-btn-group > .v-btn:last-child {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
+  width: 33%;
+  height: 4rem;
+  border-radius: 0;
 }
 .user-icon {
   position: absolute;
@@ -273,6 +434,6 @@ export default {
   width: 20px;
   border-radius: 10px;
   border-style: solid;
-  border-width: 2px;
+  border-width: 1px;
 }
 </style>

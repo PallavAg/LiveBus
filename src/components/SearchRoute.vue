@@ -17,7 +17,7 @@
 <script>
   import axios from 'axios'
   import * as hash from 'object-hash'
-  import { db } from '../../plugins/firebase'
+  import { db } from '../plugins/firebase'
   import { HERE_APP_ID, HERE_APP_CODE }  from '@/constants'
 
   export default {
@@ -87,7 +87,6 @@
     computed: {
       route_items () {
         let routes = []
-
         if (this.stations !== null) {
           this.stations.forEach(entry => {
             let transport = entry.Transports.Transport
