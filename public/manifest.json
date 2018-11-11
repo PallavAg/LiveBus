@@ -1,6 +1,6 @@
 {
-  "name": "live-bus",
-  "short_name": "live-bus",
+  "name": "LiveBus",
+  "short_name": "LiveBus",
   "icons": [
     {
       "src": "./img/icons/android-chrome-192x192.png",
