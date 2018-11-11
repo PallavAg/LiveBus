@@ -1,5 +1,5 @@
 <template>
-  <div style="height: 100%;">
+  <div style="height: 100%">
     <v-container v-if="writing" style="height: 100%; width: 100%">
       <p class="mt-4 mb-4 text-xs-left title">How's Your Trip On Bus Going?</p>
       <v-textarea
@@ -9,25 +9,17 @@
         v-model="text"
       >
       </v-textarea>
-      <v-btn v-on:click="submit">Submit</v-btn>
+      <v-btn rounded primary v-on:click="submit">Submit</v-btn>
+      <v-btn rounded dark v-on:click="canclesubmit">Cancel</v-btn>
     </v-container>
-    <div v-else>
-    <v-layout column class="map-overlay-btns">
-      <v-btn
-        color="success"
-        @click="board"
-        v-if="boarded === null"
-      >Board
-      </v-btn>
-      <template v-else>
-        <v-btn outline large fab class="align-end" v-on:click="newMessage">
-          <v-icon>add_box</v-icon>
-        </v-btn>
+    <div v-else class=" mx-0; px-0" style="width: 100%;">
+    <v-card v-if="boarded != null && !writing" column class="map-overlay-btns mx-0; px-0" style="width: 100%;">
+      <template>
         <v-layout row class="map-overlay-btn-group">
           <v-btn
             v-for="id in [2, 1, 0]"
             :key="id"
-            :color="id === capacity ? ['success','accent','error'][id] : ''"
+            :color="['success','accent','error'][id]"
             small
             tag="div"
             @click="capacity = id"
@@ -35,13 +27,32 @@
         </v-layout>
         <v-btn
           small
-          color="error"
-          @click="unboard">Exit
+          color="warning"
+          @click="unboard"
+        style="width: 100%; height: 3rem;margin:0">Exit
         </v-btn>
       </template>
-    </v-layout>
+    </v-card>
     </div>
-    <div ref="map" id="map" style="height: 100%;"></div>
+    <div ref="map" id="map" style="height:100%"></div>
+    <v-btn
+      color="success"
+      @click="board"
+      v-if="boarded === null && !writing"
+      style="width: 100%; height: 7rem;margin:0;border-radius: 0;position: absolute;
+        z-index: 100;
+        bottom: 0;
+        left: 0;
+        right: 0;"
+    >Board
+    </v-btn>
+    <v-btn v-if="userID && !writing" large fab class="align-end primary" style="position: absolute;
+        z-index: 500;
+        bottom: 8rem;
+        right: 1rem"
+           v-on:click="newMessage">
+      <v-icon>message</v-icon>
+    </v-btn>
   </div>
 </template>
 
@@ -63,9 +74,12 @@ export default {
       messages: [
       ],
       myMarker: null,
+      userID:'',
     }
   },
   mounted() {
+    if(auth.currentUser && auth.currentUser.uid)
+      this.userID = auth.currentUser.uid
     const defaultLayers = platform.createDefaultLayers()
     this.map = new Here.Map(
       this.$refs.map,
@@ -78,7 +92,6 @@ export default {
     this.clusteredDataProvider = new Here.clustering.Provider([])
     const layer = new Here.map.layer.ObjectLayer(this.clusteredDataProvider)
     this.map.addLayer(layer)
-
     window.addEventListener('resize', () => {
       this.map.getViewPort().resize()
     })
@@ -103,6 +116,10 @@ export default {
     unboard() {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
+    },
+    canclesubmit()
+    {
+      this.writing = false;
     },
     loadBubbles(){
       const defaultLayers = platform.createDefaultLayers()
@@ -193,6 +210,7 @@ export default {
       console.log(data)
       for (const uid in data.users) {
         const geoPoint = data.users[uid].location
+        console.log("SHIT" + geoPoint)
         const coords = {lat: geoPoint.latitude, lng: geoPoint.longitude}
         if (uid == auth.currentUser.uid) {
           if(this.bubbles) {
@@ -255,32 +273,38 @@ export default {
 </script>
 
 <style>
-#map {
+  #map {
   height: 100%;
+  padding-bottom: 7rem;
 }
 
 .map-overlay-btns {
   position: absolute;
   z-index: 100;
-  bottom: 1.5rem;
-  left: 2rem;
-  right: 2rem;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 7rem;
 }
 .map-overlay-btn-group {
-  padding: 0 0.5rem;
+  padding: 0 0;
 }
 .map-overlay-btn-group > .v-btn {
+  width: 33%;
+  height: 4rem;
   margin: 0;
   flex-grow: 1;
   border-radius: 0;
 }
 .map-overlay-btn-group > .v-btn:first-child {
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
+  width: 33%;
+  height: 4rem;
+  border-radius: 0;
 }
 .map-overlay-btn-group > .v-btn:last-child {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
+  width: 33%;
+  height: 4rem;
+  border-radius: 0;
 }
 .user-icon {
   position: absolute;

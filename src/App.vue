@@ -1,6 +1,6 @@
 <template>
-  <v-app class="secondary">
-    <v-toolbar class="primary" app>
+  <v-app class="secondary" style="height: 100%">
+    <v-toolbar class="primary" dark app>
       <v-toolbar-title class="mx-0 px-0" to="/">
         <v-img
           :src="require('./assets/bus-side-view.svg')"
