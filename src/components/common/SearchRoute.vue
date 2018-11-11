@@ -43,6 +43,7 @@
 <script>
   import axios from 'axios'
   import * as hash from 'object-hash'
+  import { HERE_APP_ID, HERE_APP_CODE }  from '@/constants'
 
   export default {
     data: () => ({
@@ -66,7 +67,10 @@
       navigator.geolocation.watchPosition(pos => {
         axios.get('https://transit.api.here.com/v3/stations/by_geocoord.json' + 
           '?center=' + pos.coords.latitude +
-          '%2C' + pos.coords.longitude + '&radius=350&app_id=YIB1bW5bTxyVMrCLUc5C&app_code=D8-yivpsVst46cjKj4ZoPw&max=25')
+          '%2C' + pos.coords.longitude + 
+          '&radius=350' + 
+          '&app_id=' + HERE_APP_ID + 
+          '&app_code=' + HERE_APP_CODE)
 
         .then(res => {
           const stations = res.data.Res.Stations.Stn
