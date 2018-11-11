@@ -43,7 +43,7 @@
 <script>
   import axios from 'axios'
   import * as hash from 'object-hash'
-  import { db } from '../../plugins/firebase'
+  import { db } from '../plugins/firebase'
   import { HERE_APP_ID, HERE_APP_CODE }  from '@/constants'
 
   export default {

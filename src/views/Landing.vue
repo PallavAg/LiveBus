@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import SearchRoute from './common/SearchRoute'
+import SearchRoute from '../components/SearchRoute'
 
   export default {
     components: {
