@@ -7,6 +7,11 @@ export default new Router({
   base: process.env.BASE_URL,
   routes: [
     {
+      path: '/',
+      name: 'home',
+      component: () => import(/* webpackChunkName: "home" */ './components/Landing.vue')
+    },
+    {
       path: '/routes/:routeID',
       name: 'route',
       component: () => import(/* webpackChunkName: "route" */ './views/BusRoute.vue')
