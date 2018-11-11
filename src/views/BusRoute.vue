@@ -63,9 +63,34 @@ export default {
     const docRef = db.collection('routes').doc(this.route)
     docRef.get()
       .then(doc => {
+        console.log('retrieved initial data')
         if (!doc.exists) {
           return docRef.set({})
         }
+        const data = doc.data()
+        const markup = '<svg width="24" height="24" ' +
+          'xmlns="http://www.w3.org/2000/svg">' +
+          '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
+          'height="22" /><text x="12" y="18" font-size="12pt" ' +
+          'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
+          'fill="white">H</text></svg>'
+        const icon = new Here.map.Icon(markup)
+        data.Stations.Stn.forEach(station => {
+          const theMarker = new Here.map.Marker({lat: station.y, lng: station.x}, {icon: icon})
+          this.map.addObject(theMarker)
+        })
+        data.PathSegments.PathSeg.forEach(segment => {
+          const lineString = new Here.geo.LineString()
+          const points = segment.graph.split(' ')
+          points.forEach(point => {
+            const coords = point.split(',')
+            console.log(coords)
+            lineString.pushPoint({lat:coords[0], lng:coords[1]})
+          })
+          this.map.addObject(new Here.map.Polyline(
+            lineString, { style: { lineWidth: 4 }}
+          ))
+        })
       })
     window.navigator.geolocation.getCurrentPosition(this.updateLocation)
     db.collection("routes").doc(this.route)
@@ -171,6 +196,6 @@ export default {
   width: 20px;
   border-radius: 10px;
   border-style: solid;
-  border-width: 1px;
+  border-width: 2px;
 }
 </style>
