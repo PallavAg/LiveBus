@@ -5,6 +5,7 @@ import 'firebase/database'
 import 'firebase/firestore'
 
 import "firebaseui/dist/firebaseui.css"
+
 firebase.initializeApp({
   "apiKey": "AIzaSyADL2pDe43D1r7CCLYqU3Zbe5xSRqYaAn8",
   "databaseURL": "https://livebus-7dab7.firebaseio.com",
@@ -18,8 +19,9 @@ export const db = firebase.firestore()
 export const auth = firebase.auth()
 export default firebase
 
-const settings = {timestampsInSnapshots: true};
-db.settings(settings);
+db.settings({
+  timestampsInSnapshots: true
+})
 
 
 export const AuthUI = new firebaseui.auth.AuthUI(firebase.auth())
@@ -39,7 +41,7 @@ export function LoadAuthUI (element) {
         },
         // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
         signInFlow: 'popup',
-        signInSuccessUrl: '../',
+        signInSuccessUrl: '#',
         signInOptions: [
           firebase.auth.GoogleAuthProvider.PROVIDER_ID,
           firebase.auth.PhoneAuthProvider.PROVIDER_ID,

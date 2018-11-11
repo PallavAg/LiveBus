@@ -23,11 +23,9 @@
         <v-icon>add_box</v-icon>
       </v-btn>
     </v-toolbar>
-    <v-content>
-      <router-view/>
-    </v-content>
   </v-app>
 </template>
+
 <script>
   export default{
     methods: {
@@ -50,4 +48,3 @@
     }
   }
 </script>
-
