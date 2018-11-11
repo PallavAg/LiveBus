@@ -3,29 +3,11 @@
     color="red lighten-2"
     dark
   >
-    <v-card-title class="headline red lighten-3">
-      Bus Route
+    <v-card-title class="headline red lighten-3" >
+      {{ nearest_station }}
     </v-card-title>
     <v-card-text>
       Search for bus route
-    </v-card-text>
-
-    <v-card-text>
-      <v-autocomplete
-        v-model="city_model"
-        :items="city_items"
-        :loading="city_isLoading"
-        :search-input.sync="city_search"
-        color="white"
-        hide-no-data
-        hide-selected
-        item-text="Description"
-        item-value="city"
-        label="City"
-        placeholder="Search for city"
-        prepend-icon="location_city"
-        return-object
-      ></v-autocomplete>
     </v-card-text>
 
     <v-card-text>
@@ -37,7 +19,7 @@
         color="white"
         hide-no-data
         hide-selected
-        item-text="Description"
+        item-text="name"
         item-value="route"
         label="Route"
         placeholder="Search for bus route"
@@ -73,7 +55,6 @@
 
   export default {
     data: () => ({
-      descriptionLimit: 60,
       route_entries: [],
       route_isLoading: false,
       route_model: null,
@@ -82,6 +63,7 @@
       city_isLoading: false,
       city_model: null,
       city_search: null,
+      nearest_station: null,
     }),
 
     methods: {
@@ -90,25 +72,37 @@
       }
     },
 
+    mounted () {
+      navigator.geolocation.watchPosition(pos => {
+        axios.get('https://transit.api.here.com/v3/stations/by_geocoord.json' + 
+          '?center=' + pos.coords.latitude +
+          '%2C' + pos.coords.longitude + '&radius=350&app_id=YIB1bW5bTxyVMrCLUc5C&app_code=D8-yivpsVst46cjKj4ZoPw&max=25')
+
+        .then(res => {
+          const stations = res.data.Res.Stations.Stn
+          let closestStation = stations.reduce((prev, curr) => prev.distance < curr.distance ? prev : curr)
+          this.nearest_station = closestStation.name;
+        })
+        .catch(err => {
+          console.log(err)
+        })
+      })
+    },
+
     computed: {
-      fields () {
-        if (!this.model) return []
-
-        return Object.keys(this.model).map(key => {
-          return {
-            key,
-            value: this.model[key] || 'n/a'
-          }
-        })
-      },
       route_items () {
-        return this.route_entries.map(entry => {
-          const Description = entry.Description.length > this.descriptionLimit
-            ? entry.Description.slice(0, this.descriptionLimit) + '...'
-            : entry.Description
+        let routes = []
 
-          return Object.assign({}, entry, { Description })
+        this.route_entries.forEach(entry => {
+          let transport = entry.Transports.Transport
+          
+          transport.forEach(route => {
+            if (!routes.includes(route.name))
+              routes.push(route.name)
+          })
         })
+
+        return routes
       },
       city_items () {
         return this.city_entries.map(entry => {
@@ -135,11 +129,10 @@
 
         // Lazily load input items
         // TODO: REPLACE THE BUS ROUTE API BELOW
-        axios.get('https://api.publicapis.org/entries')
+        axios.get('https://transit.api.here.com/v3/stations/by_geocoord.json?center=40.4259%2C-86.9265&radius=350&app_id=YIB1bW5bTxyVMrCLUc5C&app_code=D8-yivpsVst46cjKj4ZoPw&max=25')
           .then(res => {
-            const { count, entries } = res.data
-            this.count = count
-            this.route_entries = entries
+            const Stations = res.data.Res.Stations.Stn
+            this.route_entries = Stations
           })
           .catch(err => {
             console.log(err)
