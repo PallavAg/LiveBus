@@ -18,22 +18,18 @@
       </v-btn>
     </v-toolbar>
     <v-content>
-      <HelloWorld/>
+      <landing></landing>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld'
+import Landing from '@/components/Landing'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    Landing
   },
-  data () {
-    return {
-      //
-    }
-  }
+}
 </script>
