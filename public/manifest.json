@@ -3,13 +3,13 @@
   "short_name": "LiveBus",
   "icons": [
     {
-      "src": "./img/icons/android-chrome-192x192.png",
-      "sizes": "192x192",
+      "src": "./img/icons/android-chrome-256x256.png",
+      "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "./img/icons/android-chrome-512x512.png",
-      "sizes": "512x512",
+      "src": "./img/icons/apple-touch-icon-256x256.png",
+      "sizes": "256x256",
       "type": "image/png"
     }
   ],
