@@ -46,7 +46,13 @@
         right: 0;"
     >Board
     </v-btn>
-    <v-btn v-if="userID && !writing" large fab class="align-end primary" style="position: absolute;
+    <v-btn v-if="!writing" icon @click="center" style="position: absolute;
+        z-index: 500;
+        top: 1rem;
+        left: 1rem" >
+      <v-icon>my_location</v-icon>
+    </v-btn>
+    <v-btn v-if="userID && !writing && boarded" large fab class="primary" style="position: absolute;
         z-index: 500;
         bottom: 8rem;
         right: 1rem"
@@ -120,6 +126,11 @@ export default {
     canclesubmit()
     {
       this.writing = false;
+    },
+    center() {
+      window.navigator.geolocation.getCurrentPosition(pos => {
+        this.map.setCenter({lat: pos.coords.latitude, lng: pos.coords.longitude})
+      })
     },
     loadBubbles(){
       const defaultLayers = platform.createDefaultLayers()
@@ -245,12 +256,14 @@ export default {
       console.log("ping")
       const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
       if (this.boarded !== null) {
+        console.log("pingSHIT")
         const obj = {}
         obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
           position.coords.latitude,
           position.coords.longitude
         )
         obj[`users.${auth.currentUser.uid}.lastAlive`] = new Date()
+        console.log("pingSHITobj"+obj.longitude)
         db.collection('routes').doc(this.route).update(obj)
       } else {
         this.map.setCenter(coords)
