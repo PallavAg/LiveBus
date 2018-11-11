@@ -16,12 +16,6 @@
       <v-btn icon to="/login">
         <v-icon>account_circle</v-icon>
       </v-btn>
-      <v-btn icon v-on:click="message">
-        <v-icon>forum</v-icon>
-      </v-btn>
-      <v-btn icon v-on:click="newMessage">
-        <v-icon>add_box</v-icon>
-      </v-btn>
     </v-toolbar>
     <v-content>
       <router-view/>
@@ -32,9 +26,10 @@
 <script>
 export default {
   name: 'App',
-  data () {
-    return {
-      //
+  methods: {
+    newMessage()
+    {
+      this.$router.push("/newMessage/");
     }
   }
 }

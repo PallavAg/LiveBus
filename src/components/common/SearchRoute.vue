@@ -111,7 +111,6 @@
     computed: {
       route_items () {
         let routes = []
-
         if (this.stations !== null) {
           this.stations.forEach(entry => {
             let transport = entry.Transports.Transport

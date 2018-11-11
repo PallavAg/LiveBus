@@ -9,34 +9,35 @@
       v-model="text"
     >
     </v-textarea>
-    <p class="title">at: Russel, Third Street</p>
     <v-btn v-on:click="submit">Submit</v-btn>
   </v-container>
 </template>
 <script>
-  import {db} from '@/plugins/firebase'
+  import firebase,{db,auth} from '@/plugins/firebase'
   export default {
     data()
     {
       return{
-        text:""
+        text:"",
       }
     },
+    mounted(){
+      console.log("ROUTE:" + this.$route.params.routeID)
+    },
     methods: {
-      submit()
-      {
-        db.collection("Messages").add({
-          context: this.text,
-          latitude: 0,
-          longitude: 0,
-          place: "hell"
-        })
-          .then(()=> {
+      submit() {
+        let obj ={}
+        obj[`users.${auth.currentUser.uid}.message`] = this.$refs['tx'].value
+        obj[`users.${auth.currentUser.uid}.updated`] = new Date()
+        db.collection('routes').doc(this.route).update(obj)
+          .then(() =>
+          {
             this.$router.push('/')
-        })
-          .catch(function(error) {
+          })
+          .catch(err =>
+          {
             this.$router.push('/')
-          });
+          })
       }
     }
   }

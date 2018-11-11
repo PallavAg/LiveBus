@@ -27,7 +27,7 @@ export default new Router({
       component: () => import( './views/Message.vue')
     },
     {
-      path: '/newMessage',
+      path: '/newMessage/',
       name: 'newMessage',
       component: () => import( './views/NewMessage.vue')
     }]
