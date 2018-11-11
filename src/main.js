@@ -8,6 +8,7 @@ import '@/plugins/firebase'
 import router from './router'
 
 import '@/plugins/heremap'
+import './registerServiceWorker'
 
 Vue.config.productionTip = false
 
