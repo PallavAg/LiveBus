@@ -10,7 +10,7 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <search-route></search-route>
-      <v-btn icon to="/login">
+      <v-btn icon to="/login" v-if="!user">
         <v-icon>account_circle</v-icon>
       </v-btn>
     </v-toolbar>
@@ -21,14 +21,20 @@
 </template>
 
 <script>
-import SearchRoute from "./components/common/SearchRoute";
+import SearchRoute from "./components/SearchRoute"
+import { auth } from '@/plugins/firebase'
 export default {
   name: 'App',
   components: {SearchRoute},
   data () {
     return {
-      //
+      user: null,
     }
+  },
+  mounted () {
+    auth.onAuthStateChanged(user => {
+      this.user = user
+    })
   }
 }
 </script>

@@ -52,7 +52,7 @@
         left: 1rem" >
       <v-icon>my_location</v-icon>
     </v-btn>
-    <v-btn v-if="userID && !writing && boarded" large fab class="primary" style="position: absolute;
+    <v-btn v-if="true" large fab class="primary" style="position: absolute;
         z-index: 500;
         bottom: 8rem;
         right: 1rem"
@@ -160,13 +160,6 @@ export default {
     const behavior = new Here.mapevents.Behavior(new Here.mapevents.MapEvents(this.map))
     // const ui = Here.ui.UI.createDefault(this.map, defaultLayers)
     this.loadBubbles()
-    const docRef = db.collection('routes').doc(this.route)
-    docRef.get()
-      .then(doc => {
-        if (!doc.exists) {
-          return docRef.set({})
-        }
-      })
     window.navigator.geolocation.getCurrentPosition(this.updateLocation)
     this.load()
   },
@@ -230,6 +223,7 @@ export default {
       })
     },
     loadBubbles(){
+      if (!this.route) return;
       const defaultLayers = platform.createDefaultLayers()
       let ui = Here.ui.UI.createDefault(this.map, defaultLayers, 'en-US');
       let routeRef = db.collection("routes").doc(this.route);
