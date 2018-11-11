@@ -4,7 +4,7 @@
       <v-btn
         color="success"
         @click="board"
-        v-if="false"
+        v-if="boarded === null"
       >Board
       </v-btn>
       <template v-else>
@@ -36,9 +36,9 @@ export default {
   name: "BusRoute",
   data() {
     return {
-      route: 'placeholder',
       boarded: null,
       capacity: null,
+      markers: new Map(),
     }
   },
   mounted() {
@@ -63,33 +63,61 @@ export default {
           return docRef.set({})
         }
       })
+    window.navigator.geolocation.getCurrentPosition(this.updateLocation)
   },
   methods: {
     board() {
       this.boarded = window.navigator.geolocation.watchPosition(this.updateLocation)
+      this.dbUnsubscribe = db.collection("routes").doc(this.route)
+        .onSnapshot(this.docUpdated)
     },
     unboard() {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
+      if (this.dbUnsubscribe) this.dbUnsubscribe()
+    },
+    docUpdated (doc) {
+      const data = doc.data()
+      for (const uid in data.users) {
+        const geoPoint = data.users[uid].location
+        console.log(geoPoint)
+        const coords = {lat: geoPoint.latitude, lng: geoPoint.longitude}
+        if (this.markers.has(uid)) {
+          console.log('update' + uid)
+          const theMarker = this.markers.get(uid)
+          theMarker.setPosition(coords)
+        } else {
+          console.log('create new marker for ' + uid)
+          const markup = `<div><img src="${data.users[uid].photoURL}" class="user-icon"></div>`
+          const icon = new Here.map.DomIcon(markup)
+          const theMarker = new Here.map.DomMarker(coords, {icon: icon})
+          this.markers.set(uid, theMarker)
+          this.map.addObject(theMarker)
+        }
+      }
+
     },
     updateLocation(position) {
-      const obj = {}
-      obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
-        position.coords.latitude,
-        position.coords.longitude
-      )
-      db.collection('routes').doc(this.route).update(obj)
-      const svgMarkup = '<svg width="24" height="24" ' +
-        'xmlns="http://www.w3.org/2000/svg">' +
-        '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
-        'height="22" /><text x="12" y="18" font-size="12pt" ' +
-        'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
-        'fill="white">H</text></svg>';
-      const icon = new Here.map.Icon(svgMarkup)
+      console.log("ping")
       const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
-      const marker = new Here.map.Marker(coords, {icon: icon})
-      this.map.addObject(marker)
+      if (this.boarded !== null) {
+        const obj = {}
+        obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
+          position.coords.latitude,
+          position.coords.longitude
+        )
+        obj[`users.${auth.currentUser.uid}.lastAlive`] = new Date()
+        obj[`users.${auth.currentUser.uid}.photoURL`] = auth.currentUser.photoURL
+        db.collection('routes').doc(this.route).update(obj)
+      } else {
+        this.map.setCenter(coords)
+      }
     },
+  },
+  computed: {
+    route () {
+      return this.$route.params.routeID
+    }
   },
   watch: {
     capacity (val) {
@@ -128,5 +156,14 @@ export default {
 .map-overlay-btn-group > .v-btn:last-child {
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
+}
+.user-icon {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  height: 30px;
+  width: 30px;
+  border-radius: 15px;
+  border-style: solid;
 }
 </style>
