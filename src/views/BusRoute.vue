@@ -4,7 +4,7 @@
       <v-btn
         color="success"
         @click="board"
-        v-if="false"
+        v-if="boarded === null"
       >Board
       </v-btn>
       <template v-else>
@@ -36,9 +36,10 @@ export default {
   name: "BusRoute",
   data() {
     return {
-      route: 'placeholder',
       boarded: null,
       capacity: null,
+      markers: new Map(),
+      myMarker: null
     }
   },
   mounted() {
@@ -63,33 +64,44 @@ export default {
           return docRef.set({})
         }
       })
+    window.navigator.geolocation.getCurrentPosition(this.updateLocation)
   },
   methods: {
     board() {
       this.boarded = window.navigator.geolocation.watchPosition(this.updateLocation)
+      console.log(this.boarded)
     },
     unboard() {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
     },
     updateLocation(position) {
+      console.log("ping")
+      const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
       const obj = {}
       obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
         position.coords.latitude,
         position.coords.longitude
       )
       db.collection('routes').doc(this.route).update(obj)
-      const svgMarkup = '<svg width="24" height="24" ' +
-        'xmlns="http://www.w3.org/2000/svg">' +
-        '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
-        'height="22" /><text x="12" y="18" font-size="12pt" ' +
-        'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
-        'fill="white">H</text></svg>';
-      const icon = new Here.map.Icon(svgMarkup)
-      const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
-      const marker = new Here.map.Marker(coords, {icon: icon})
-      this.map.addObject(marker)
+      if (this.myMarker) {
+        console.log(coords)
+        this.myMarker.setPosition(coords)
+      } else {
+        console.log('create new marker')
+        this.map.setCenter(coords)
+        const markup = `<div><img src="${auth.currentUser.photoURL}" class="user-icon"></img></div>`
+        console.log(auth.currentUser)
+        const icon = new Here.map.DomIcon(markup)
+        this.myMarker = new Here.map.DomMarker(coords, {icon: icon})
+        this.map.addObject(this.myMarker)
+      }
     },
+  },
+  computed: {
+    route () {
+      return this.$route.params.routeID
+    }
   },
   watch: {
     capacity (val) {
@@ -128,5 +140,14 @@ export default {
 .map-overlay-btn-group > .v-btn:last-child {
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
+}
+.user-icon {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  height: 30px;
+  width: 30px;
+  border-radius: 15px;
+  border-style: solid;
 }
 </style>

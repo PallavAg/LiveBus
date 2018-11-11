@@ -7,14 +7,14 @@ export default new Router({
   base: process.env.BASE_URL,
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: () => import(/* webpackChunkName: "about" */ './views/BusRoute.vue')
+      path: '/routes/:routeID',
+      name: 'route',
+      component: () => import(/* webpackChunkName: "route" */ './views/BusRoute.vue')
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import(/* webpackChunkName: "about" */ './views/Login.vue')
+      component: () => import(/* webpackChunkName: "login" */ './views/Login.vue')
     },
   ]
 })
