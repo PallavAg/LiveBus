@@ -16,6 +16,12 @@
       <v-btn icon v-on:click="login">
         <v-icon>account_circle</v-icon>
       </v-btn>
+      <v-btn icon v-on:click="message">
+        <v-icon>forum</v-icon>
+      </v-btn>
+      <v-btn icon v-on:click="newMessage">
+        <v-icon>add_box</v-icon>
+      </v-btn>
     </v-toolbar>
     <v-content>
       <router-view/>
@@ -31,7 +37,15 @@
       },
       home: function()
       {
-        this.$router.push('home')
+        this.$router.push('/')
+      },
+      message: function()
+      {
+        this.$router.push('message')
+      },
+      newMessage: function()
+      {
+        this.$router.push('newMessage')
       }
     }
   }
