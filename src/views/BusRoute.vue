@@ -1,6 +1,7 @@
 <template>
   <div ref="map" id="map" style="height: 100%;">
     <v-layout column class="map-overlay-btns">
+      <v-btn icon @click="center"><v-icon>my_location</v-icon></v-btn>
       <v-btn
         color="success"
         @click="board"
@@ -144,6 +145,11 @@ export default {
         this.map.setCenter(coords)
       }
     },
+    center() {
+      window.navigator.geolocation.getCurrentPosition(pos => {
+        this.map.setCenter({lat: pos.coords.latitude, lng: pos.coords.longitude})
+      })
+    }
   },
   computed: {
     route () {
