@@ -62,8 +62,9 @@ const CUSTOM_THEME = {
   getNoisePresentation (noisePoint) {
     const data = noisePoint.getData()
     const delay = Date.now() - data.lastAlive.toMillis()
+    console.log(delay)
     const imageURL = data.photoURL|| 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png'
-    const markup = `<div><img src="${imageURL}" class="user-icon" style="${delay > 3000 ? 'filter: grayscale(100%);' : ''}"></div>`
+    const markup = `<div><img src="${imageURL}" class="user-icon" style="${delay > 15000 ? 'filter: grayscale(100%);' : ''}"></div>`
     const noiseMarker = new Here.map.DomMarker(noisePoint.getPosition(), {
       min: noisePoint.getMinZoom(),
       icon: new Here.map.DomIcon(markup , {
@@ -115,41 +116,53 @@ export default {
     })
     const behavior = new Here.mapevents.Behavior(new Here.mapevents.MapEvents(this.map))
     // const ui = Here.ui.UI.createDefault(this.map, defaultLayers)
-    const docRef = db.collection('routes').doc(this.route)
-    docRef.get()
-      .then(doc => {
-        if (!doc.exists) {
-          return docRef.set({})
-        }
-        const data = doc.data()
-        const markup = '<svg width="24" height="24" ' +
-          'xmlns="http://www.w3.org/2000/svg">' +
-          '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
-          'height="22" /><text x="12" y="18" font-size="12pt" ' +
-          'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
-          'fill="white">H</text></svg>'
-        const icon = new Here.map.Icon(markup)
-        data.Stations.Stn.forEach(station => {
-          const theMarker = new Here.map.Marker({lat: station.y, lng: station.x}, {icon: icon})
-          this.map.addObject(theMarker)
-        })
-        data.PathSegments.PathSeg.forEach(segment => {
-          const lineString = new Here.geo.LineString()
-          const points = segment.graph.split(' ')
-          points.forEach(point => {
-            const coords = point.split(',')
-            lineString.pushPoint({lat:coords[0], lng:coords[1]})
-          })
-          this.map.addObject(new Here.map.Polyline(
-            lineString, { style: { lineWidth: 4 }}
-          ))
-        })
-      })
+
     window.navigator.geolocation.getCurrentPosition(this.updateLocation)
-    db.collection("routes").doc(this.route)
-      .onSnapshot(this.docUpdated)
+    this.load()
   },
   methods: {
+    load() {
+      if (this.unsubsribe) this.unsubsribe()
+      this.map.removeObjects(this.map.getObjects())
+      if (!this.route) return;
+
+      const docRef = db.collection('routes').doc(this.route)
+      docRef.get()
+        .then(doc => {
+          if (!doc.exists) {
+            return docRef.set({})
+          }
+          const data = doc.data()
+          const markup = '<svg width="24" height="24" ' +
+            'xmlns="http://www.w3.org/2000/svg">' +
+            '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
+            'height="22" /><text x="12" y="18" font-size="12pt" ' +
+            'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
+            'fill="white">H</text></svg>'
+          const icon = new Here.map.Icon(markup)
+          /* data.Stations.Stn.forEach(station => {
+            const theMarker = new Here.map.Marker({lat: station.y, lng: station.x}, {icon: icon})
+            this.map.addObject(theMarker)
+          }) */
+          const thePath = data.LineInfos.LineInfo.find(a => a.name == this.routeName)
+          const segIDs = thePath.LineSegments[0].seg_ids.split(' ')
+          console.log(segIDs)
+          for (const id of segIDs) {
+            const segment = data.PathSegments.PathSeg.find(a => a.id == id)
+            const lineString = new Here.geo.LineString()
+            const points = segment.graph.split(' ')
+            points.forEach(point => {
+              const coords = point.split(',')
+              lineString.pushPoint({lat:coords[0], lng:coords[1]})
+            })
+            this.map.addObject(new Here.map.Polyline(
+              lineString, { style: { lineWidth: 4 }}
+            ))
+          }
+        })
+      this.unsubsribe = db.collection("routes").doc(this.route)
+        .onSnapshot(this.docUpdated)
+    },
     board() {
       this.boarded = window.navigator.geolocation.watchPosition(this.updateLocation)
     },
@@ -192,7 +205,10 @@ export default {
         )
         obj[`users.${auth.currentUser.uid}.lastAlive`] = new Date()
         obj[`users.${auth.currentUser.uid}.photoURL`] = auth.currentUser.photoURL
-        db.collection('routes').doc(this.route).update(obj)
+        if (this.route) {
+          db.collection('routes').doc(this.route).update(obj)
+        }
+
       } else {
         this.map.setCenter(coords)
       }
@@ -208,6 +224,14 @@ export default {
       const obj = {}
       obj[`users.${auth.currentUser.uid}.capacity`] = val
       db.collection('routes').doc(this.route).update(obj)
+    },
+    route () {
+      console.log('route change')
+      this.load()
+    },
+    routeName () {
+      if (!this.route) return null;
+      return this.route.split(':')[1]
     }
   },
 }

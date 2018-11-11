@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import BusRoute from './views/BusRoute.vue'
 Vue.use(Router)
 
 export default new Router({
@@ -9,12 +10,12 @@ export default new Router({
     {
       path: '/',
       name: 'home',
-      component: () => import(/* webpackChunkName: "home" */ './components/Landing.vue')
+      component: BusRoute
     },
     {
       path: '/routes/:routeID',
       name: 'route',
-      component: () => import(/* webpackChunkName: "route" */ './views/BusRoute.vue')
+      component: BusRoute
     },
     {
       path: '/login',

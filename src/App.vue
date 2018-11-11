@@ -6,13 +6,10 @@
           :src="require('./assets/bus-side-view.svg')"
           contain
           width="55"
-          height="40"
         ></v-img>
       </v-toolbar-title>
-      <v-toolbar-title class="ml-0 px-0">
-        live-bus
-      </v-toolbar-title>
       <v-spacer></v-spacer>
+      <search-route></search-route>
       <v-btn icon to="/login">
         <v-icon>account_circle</v-icon>
       </v-btn>
@@ -24,8 +21,10 @@
 </template>
 
 <script>
+import SearchRoute from "./components/common/SearchRoute";
 export default {
   name: 'App',
+  components: {SearchRoute},
   data () {
     return {
       //

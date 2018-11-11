@@ -1,43 +1,17 @@
 <template>
-  <v-card
-    color="red lighten-2"
-    dark
-  >
-    <v-card-title class="headline red lighten-3" >
-      {{ nearest_station !== null ? nearest_station.name : "Bus Route" }}
-    </v-card-title>
-    <v-card-text>
-      Search for bus route
-    </v-card-text>
-
-    <v-card-text>
-      <v-autocomplete
-        v-model="route_model"
-        :items="route_items"
-        :search-input.sync="route_search"
-        color="white"
-        hide-no-data
-        hide-selected
-        item-text="name"
-        item-value="route"
-        label="Route"
-        placeholder="Search for bus route"
-        prepend-icon="directions_bus"
-        return-object
-      ></v-autocomplete>
-    </v-card-text>
-
-    <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-        :disabled="!route_model"
-        color="blue darken-3"
-        v-on:click="search"
-      >
-        Search
-      </v-btn>
-    </v-card-actions>
-  </v-card>
+  <v-autocomplete
+    solo-inverted
+    single-line
+    v-model="route_model"
+    :items="route_items"
+    :search-input.sync="route_search"
+    hide-no-data
+    hide-selected
+    item-text="name"
+    item-value="route"
+    placeholder="Search for bus route"
+    return-object
+  ></v-autocomplete>
 </template>
 
 <script>
@@ -57,25 +31,27 @@
 
     methods: {
       search () {
-        let id = hash(this.nearest_station.city + 
-                      this.nearest_station.state + 
-                      this.nearest_station.ccode + 
-                      this.route_model)
+        let id = hash(this.nearest_station.city +
+                      this.nearest_station.state +
+                      this.nearest_station.ccode) + ':' + this.route_model
 
         // query lines info
-        axios.get('https://transit.api.here.com/v3/lines/by_stn_id.json' + 
-        '?app_id=' + HERE_APP_ID + 
-        '&app_code=' + HERE_APP_CODE +  
-        '&stnId=' + this.nearest_station.id +  
+        const docRef = db.collection('routes').doc(id)
+        axios.get('https://transit.api.here.com/v3/lines/by_stn_id.json' +
+        '?app_id=' + HERE_APP_ID +
+        '&app_code=' + HERE_APP_CODE +
+        '&stnId=' + this.nearest_station.id +
         '&graph=1' +
         '&max=20')
-
         .then(res => {
-          const info = res.data.Res
-          
-          db.collection('routes').doc(id).set(info)
-          .then(docRef => {})
-          .catch(err => {})
+          return docRef.get()
+            .then(async doc => {
+              if (!doc.exists) {
+                const info = res.data.Res
+                await docRef.set(info)
+              }
+              this.$router.replace('/routes/' + id)
+            })
         })
         .catch(err => {
           console.log(err)
@@ -83,17 +59,17 @@
 
 
         // redirect to the next page
-        this.$router.push('/routes/' + id)
+
       }
     },
 
     mounted () {
-      navigator.geolocation.watchPosition(pos => {
-        axios.get('https://transit.api.here.com/v3/stations/by_geocoord.json' + 
+      navigator.geolocation.getCurrentPosition(pos => {
+        axios.get('https://transit.api.here.com/v3/stations/by_geocoord.json' +
           '?center=' + pos.coords.latitude +
-          '%2C' + pos.coords.longitude + 
-          '&radius=350' + 
-          '&app_id=' + HERE_APP_ID + 
+          '%2C' + pos.coords.longitude +
+          '&radius=350' +
+          '&app_id=' + HERE_APP_ID +
           '&app_code=' + HERE_APP_CODE)
 
         .then(res => {
@@ -115,7 +91,7 @@
         if (this.stations !== null) {
           this.stations.forEach(entry => {
             let transport = entry.Transports.Transport
-            
+
             transport.forEach(route => {
               if (!routes.includes(route.name))
                 routes.push(route.name)
@@ -131,6 +107,9 @@
         // Items have already been loaded
         if (this.route_items.length > 0) return
       },
+      route_model () {
+        this.search()
+      }
     }
   }
 </script>
