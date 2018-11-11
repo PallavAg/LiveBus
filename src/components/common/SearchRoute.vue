@@ -98,7 +98,7 @@
     },
 
     watch: {
-      route_search (val) {
+      route_search () {
         // Items have already been loaded
         if (this.route_items.length > 0) return
       },
