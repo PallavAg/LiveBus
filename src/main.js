@@ -7,6 +7,8 @@ import 'material-design-icons-iconfont/dist/material-design-icons.css'
 import '@/plugins/firebase'
 import router from './router'
 
+import '@/plugins/heremap'
+
 Vue.config.productionTip = false
 
 new Vue({

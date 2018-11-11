@@ -1,4 +1,5 @@
-# live-bus
+# LiveBus
+This service adds the ability to track buses on public transport instantly through crowd sourced location sharing. 
 
 ## Project setup
 ```
