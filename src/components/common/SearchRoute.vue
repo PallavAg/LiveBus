@@ -57,6 +57,7 @@
       search () {
           this.$router.push('/routes/' + hash(this.nearest_station.city + 
                                               this.nearest_station.state + 
+                                              this.nearest_station.ccode + 
                                               this.route_model))
       }
     },
