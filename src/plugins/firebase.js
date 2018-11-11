@@ -5,6 +5,7 @@ import 'firebase/database'
 import 'firebase/firestore'
 
 import "firebaseui/dist/firebaseui.css"
+
 firebase.initializeApp({
   "apiKey": "AIzaSyADL2pDe43D1r7CCLYqU3Zbe5xSRqYaAn8",
   "databaseURL": "https://livebus-7dab7.firebaseio.com",
@@ -17,6 +18,11 @@ firebase.initializeApp({
 export const db = firebase.firestore()
 export const auth = firebase.auth()
 export default firebase
+
+db.settings({
+  timestampsInSnapshots: true
+})
+
 
 export const AuthUI = new firebaseui.auth.AuthUI(firebase.auth())
 
