@@ -39,7 +39,6 @@ export default {
       boarded: null,
       capacity: null,
       markers: new Map(),
-      myMarker: null
     }
   },
   mounted() {
@@ -69,32 +68,49 @@ export default {
   methods: {
     board() {
       this.boarded = window.navigator.geolocation.watchPosition(this.updateLocation)
-      console.log(this.boarded)
+      this.dbUnsubscribe = db.collection("routes").doc(this.route)
+        .onSnapshot(this.docUpdated)
     },
     unboard() {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
+      if (this.dbUnsubscribe) this.dbUnsubscribe()
+    },
+    docUpdated (doc) {
+      const data = doc.data()
+      for (const uid in data.users) {
+        const geoPoint = data.users[uid].location
+        console.log(geoPoint)
+        const coords = {lat: geoPoint.latitude, lng: geoPoint.longitude}
+        if (this.markers.has(uid)) {
+          console.log('update' + uid)
+          const theMarker = this.markers.get(uid)
+          theMarker.setPosition(coords)
+        } else {
+          console.log('create new marker for ' + uid)
+          const markup = `<div><img src="${data.users[uid].photoURL}" class="user-icon"></div>`
+          const icon = new Here.map.DomIcon(markup)
+          const theMarker = new Here.map.DomMarker(coords, {icon: icon})
+          this.markers.set(uid, theMarker)
+          this.map.addObject(theMarker)
+        }
+      }
+
     },
     updateLocation(position) {
       console.log("ping")
       const coords = {lat: position.coords.latitude, lng: position.coords.longitude}
-      const obj = {}
-      obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
-        position.coords.latitude,
-        position.coords.longitude
-      )
-      db.collection('routes').doc(this.route).update(obj)
-      if (this.myMarker) {
-        console.log(coords)
-        this.myMarker.setPosition(coords)
+      if (this.boarded !== null) {
+        const obj = {}
+        obj[`users.${auth.currentUser.uid}.location`] = new firebase.firestore.GeoPoint(
+          position.coords.latitude,
+          position.coords.longitude
+        )
+        obj[`users.${auth.currentUser.uid}.lastAlive`] = new Date()
+        obj[`users.${auth.currentUser.uid}.photoURL`] = auth.currentUser.photoURL
+        db.collection('routes').doc(this.route).update(obj)
       } else {
-        console.log('create new marker')
         this.map.setCenter(coords)
-        const markup = `<div><img src="${auth.currentUser.photoURL}" class="user-icon"></img></div>`
-        console.log(auth.currentUser)
-        const icon = new Here.map.DomIcon(markup)
-        this.myMarker = new Here.map.DomMarker(coords, {icon: icon})
-        this.map.addObject(this.myMarker)
       }
     },
   },
