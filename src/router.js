@@ -9,7 +9,7 @@ export default new Router({
     {
       path: '/',
       name: 'home',
-      component: () => import(/* webpackChunkName: "home" */ './components/Landing.vue')
+      component: () => import(/* webpackChunkName: "home" */ './views/Landing.vue')
     },
     {
       path: '/routes/:routeID',

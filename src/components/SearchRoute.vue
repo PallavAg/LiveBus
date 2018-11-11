@@ -1,49 +1,33 @@
 <template>
   <v-card
-    color="red lighten-2"
-    dark
+    color="light-blue white--text"
   >
-    <v-card-title class="headline red lighten-3" >
+    <v-card-title primary-title class="headline" >
       {{ nearest_station !== null ? nearest_station.name : "Bus Route" }}
     </v-card-title>
-    <v-card-text>
-      Search for bus route
-    </v-card-text>
 
     <v-card-text>
-      <v-autocomplete
-        v-model="route_model"
-        :items="route_items"
-        :search-input.sync="route_search"
-        color="white"
-        hide-no-data
-        hide-selected
-        item-text="name"
-        item-value="route"
-        label="Route"
-        placeholder="Search for bus route"
-        prepend-icon="directions_bus"
-        return-object
-      ></v-autocomplete>
+      <v-flex xs12 d-flex>
+        <v-select
+          v-model="route_model"
+          :items="route_items"
+          :search-input.sync="route_search"
+          label="Route"
+          placeholder="Route"
+          prepend-inner-icon="directions_bus"
+          autofocus
+          solo
+          v-on:input="search"
+        ></v-select>
+      </v-flex>
     </v-card-text>
-
-    <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-        :disabled="!route_model"
-        color="blue darken-3"
-        v-on:click="search"
-      >
-        Search
-      </v-btn>
-    </v-card-actions>
   </v-card>
 </template>
 
 <script>
   import axios from 'axios'
   import * as hash from 'object-hash'
-  import { db } from '../../plugins/firebase'
+  import { db } from '../plugins/firebase'
   import { HERE_APP_ID, HERE_APP_CODE }  from '@/constants'
 
   export default {
@@ -74,8 +58,8 @@
           const info = res.data.Res
           
           db.collection('routes').doc(id).set(info)
-          .then(docRef => {})
-          .catch(err => {})
+          .then(() => {})
+          .catch(() => {})
         })
         .catch(err => {
           console.log(err)

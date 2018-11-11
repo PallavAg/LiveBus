@@ -48,7 +48,6 @@
 <script>
 import Here, {platform} from "../plugins/heremap"
 import firebase, {db, auth} from '@/plugins/firebase'
-import App from "../App.vue"
 
 export default {
   name: "BusRoute",
@@ -63,6 +62,7 @@ export default {
       ],
       messages: [
       ],
+      myMarker: null,
     }
   },
   mounted() {
@@ -75,6 +75,10 @@ export default {
         center: {lat: 49, lng: -89}
       }
     )
+    this.clusteredDataProvider = new Here.clustering.Provider([])
+    const layer = new Here.map.layer.ObjectLayer(this.clusteredDataProvider)
+    this.map.addLayer(layer)
+
     window.addEventListener('resize', () => {
       this.map.getViewPort().resize()
     })
@@ -89,17 +93,16 @@ export default {
         }
       })
     window.navigator.geolocation.getCurrentPosition(this.updateLocation)
+    db.collection("routes").doc(this.route)
+      .onSnapshot(this.docUpdated)
   },
   methods: {
     board() {
       this.boarded = window.navigator.geolocation.watchPosition(this.updateLocation)
-      this.dbUnsubscribe = db.collection("routes").doc(this.route)
-        .onSnapshot(this.docUpdated)
     },
     unboard() {
       window.navigator.geolocation.clearWatch(this.boarded)
       this.boarded = null
-      if (this.dbUnsubscribe) this.dbUnsubscribe()
     },
     loadBubbles(){
       const defaultLayers = platform.createDefaultLayers()
@@ -186,32 +189,35 @@ export default {
     },
     docUpdated (doc) {
       const data = doc.data()
+      const dataPoints = []
+      console.log(data)
       for (const uid in data.users) {
         const geoPoint = data.users[uid].location
-        console.log(geoPoint)
         const coords = {lat: geoPoint.latitude, lng: geoPoint.longitude}
-        if (this.markers.has(uid)) {
-          console.log('update' + uid)
-          const theMarker = this.markers.get(uid)
-          this.bubbles.forEach(bubble=>
-          {
-            if(bubble.user === uid)
-            {
-              bubble.bubble.setPosition(coords)
-            }
-          });
-          theMarker.setPosition(coords)
+        if (uid == auth.currentUser.uid) {
+          if(this.bubbles) {
+            this.bubbles.forEach(bubble => {
+              if (bubble.user === uid) {
+                bubble.bubble.setPosition(coords)
+              }
+            });
+          }
+          if (this.myMarker) {
+            this.myMarker.setPosition(coords)
+          } else {
+            console.log('create new marker for ' + uid)
+            const markup = `<div><img src="${auth.currentUser.photoURL}" class="user-icon"></div>`
+            const icon = new Here.map.DomIcon(markup)
+            const theMarker = new Here.map.DomMarker(coords, {icon: icon})
+            this.myMarker = theMarker
+            this.map.addObject(theMarker)
+          }
         } else {
-          console.log('create new marker for ' + uid)
-          const markup = `<div><img src="${data.users[uid].photoURL}" class="user-icon"></div>`
-          const icon = new Here.map.DomIcon(markup)
-          const theMarker = new Here.map.DomMarker(coords, {icon: icon})
-          this.markers.set(uid, theMarker)
-          this.map.addObject(theMarker)
-
+          dataPoints.push(new Here.clustering.DataPoint(coords.lat, coords.lng))
         }
-      }
 
+      }
+      this.clusteredDataProvider.setDataPoints(dataPoints)
     },
     newMessage()
     {
@@ -227,7 +233,6 @@ export default {
           position.coords.longitude
         )
         obj[`users.${auth.currentUser.uid}.lastAlive`] = new Date()
-        obj[`users.${auth.currentUser.uid}.photoURL`] = auth.currentUser.photoURL
         db.collection('routes').doc(this.route).update(obj)
       } else {
         this.map.setCenter(coords)
@@ -279,11 +284,12 @@ export default {
 }
 .user-icon {
   position: absolute;
-  top: -15px;
-  left: -15px;
-  height: 30px;
-  width: 30px;
-  border-radius: 15px;
+  top: -10px;
+  left: -10px;
+  height: 20px;
+  width: 20px;
+  border-radius: 10px;
   border-style: solid;
+  border-width: 1px;
 }
 </style>
