@@ -16,3 +16,35 @@ firebase.initializeApp({
 export const db = firebase.firestore()
 export const auth = firebase.auth()
 export default firebase
+
+export const AuthUI = new firebaseui.auth.AuthUI(firebase.auth())
+
+export function LoadAuthUI (element) {
+    return new Promise((resolve, reject) => {
+        const uiConfig = {
+            callbacks: {
+                signInSuccessWithAuthResult: (authResult, redirectUrl) => {
+                    resolve(authResult, redirectUrl)
+                    return true
+                },
+                signInFailure: error => {
+                    reject(error)
+                },
+            },
+            // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
+            signInFlow: 'popup',
+            signInSuccessUrl: '#',
+            signInOptions: [
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+                firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+            ],
+            // Terms of service url.
+            tosUrl: '#',
+            // Privacy policy url.
+            privacyPolicyUrl: '#'
+        }
+        AuthUI.start(element, uiConfig)
+    })
+}
