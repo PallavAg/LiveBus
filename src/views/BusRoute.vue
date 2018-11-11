@@ -61,9 +61,12 @@ const CUSTOM_THEME = {
   },
   getNoisePresentation (noisePoint) {
     const data = noisePoint.getData()
-    const noiseMarker = new Here.map.Marker(noisePoint.getPosition(), {
+    const delay = Date.now() - data.lastAlive.toMillis()
+    const imageURL = data.photoURL|| 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png'
+    const markup = `<div><img src="${imageURL}" class="user-icon" style="${delay > 3000 ? 'filter: grayscale(100%);' : ''}"></div>`
+    const noiseMarker = new Here.map.DomMarker(noisePoint.getPosition(), {
       min: noisePoint.getMinZoom(),
-      icon: new Here.map.Icon(data.photoURL || 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png', {
+      icon: new Here.map.DomIcon(markup , {
         size: {w: 20, h: 20},
         anchor: {x: 10, y: 10}
       })
@@ -99,7 +102,7 @@ export default {
       theme: CUSTOM_THEME,
       clusteringOptions: {
         // Maximum radius of the neighbourhood
-        eps: 16,
+        eps: 64,
         // minimum weight of points required to form a cluster
         minWeight: 1
       }
@@ -115,7 +118,6 @@ export default {
     const docRef = db.collection('routes').doc(this.route)
     docRef.get()
       .then(doc => {
-        console.log('retrieved initial data')
         if (!doc.exists) {
           return docRef.set({})
         }
@@ -166,7 +168,6 @@ export default {
           if (this.myMarker) {
             this.myMarker.setPosition(coords)
           } else {
-            console.log('create new marker for ' + uid)
             const markup = `<div><img src="${auth.currentUser.photoURL}" class="user-icon"></div>`
             const icon = new Here.map.DomIcon(markup)
             const theMarker = new Here.map.DomMarker(coords, {icon: icon})
