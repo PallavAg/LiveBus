@@ -1,5 +1,5 @@
 # LiveBus
-This service adds the ability to track buses on public transport instantly through crowd sourced location sharing. 
+This is a project built as part of the MadHacks Hackathon at the university of Wisconsin. This project is a hybrid web app that adds the ability to track buses on public transport instantly through crowd sourced location sharing.
 
 ## Project setup
 ```
